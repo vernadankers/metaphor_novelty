@@ -12,15 +12,20 @@ from evaluate import evaluate
 
 
 
-def train(model, train, dev, train_steps, lr, weight, alpha, beta, **kwargs):
+def train(model, train, dev, train_steps, lr, metaphor_weight, alpha, beta,
+          **kwargs):
     """
     Train MetaphorModel on Metaphor data.
 
     Args:
         model (nn.Module): initialised model, untrained
-        metaphor_train (DataLoader): object containing metaphor training data.
-        metaphor_dev (DataLoader): object containing metaphor validation data.
+        train (DataLoader): object containing metaphor training data.
+        dev (DataLoader): object containing metaphor validation data.
+        train_steps (int): number of updates to train for
         lr (float): learning rate for optimiser
+        metaphor_weight (float): weight for the positive metaphor class
+        alpha (float): weight for the metaphor detection task
+        beta (float): weight for the novelty prediction task
 
     Returns:
         best_model: state_dict of the best model according to validation data.
@@ -50,8 +55,8 @@ def train(model, train, dev, train_steps, lr, weight, alpha, beta, **kwargs):
         metaphoricity_labels = batch.metaphoricity_labels.float().view(-1)
         metaphoricity_output = metaphoricity_output.cpu().contiguous().view(-1)
         weights = copy.deepcopy(metaphoricity_labels)
-        weights[weights == 1] = weight
-        weights[weights == 0] = 1 - weight                
+        weights[weights == 1] = metaphor_weight
+        weights[weights == 0] = 1 - metaphor_weight                
         weights[weights == -2] = 0
         loss_fn_metaphor = BCELoss(weight=weights)
         metaphoricity_loss = loss_fn_metaphor(
