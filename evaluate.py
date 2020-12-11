@@ -62,11 +62,11 @@ def evaluate(model, dataloader, dataset_name="validation", output_filename=None)
         with codecs.open(output_filename, 'w', encoding="utf-8") as f:
             f.write(f"sentences\ttarget_metaphoricity\tprediction_metaphoricity\ttarget_novelty\tprediction_novelty\n")
             for sentence, target_m, prediction_m, target_n, prediction_n in trace:
-                target_m = " ".join([str(x) for x in target_m])
-                prediction_m = " ".join([str(x) for x in prediction_m])
-                target_n = " ".join([str(round(x, 3)) for x in target_n])
-                prediction_n = " ".join([str(round(x, 3)) for x in prediction_n])
-                f.write(f"{' '.join(sentence)}\t{target_m}\t{prediction_m}\t{target_n}\t{prediction_n}\n")
+                t_m = " ".join([str(x) for x in target_m])
+                p_m = " ".join([str(x) for x in prediction_m])
+                t_n = " ".join([str(round(x, 3)) for x in target_n])
+                p_n = " ".join([str(round(x, 3)) for x in prediction_n])
+                f.write(f"{' '.join(sentence)}\t{t_m}\t{p_m}\t{t_n}\t{p_n}\n")
     return f1, r
 
 
