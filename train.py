@@ -6,8 +6,8 @@ import logging
 import numpy as np
 import torch
 
-from torch.nn import MSELoss, BCELoss
-from transformers import get_constant_schedule_with_warmup, AdamW
+from torch.nn import MSELoss, BCELoss, NLLLoss
+from transformers import get_cosine_schedule_with_warmup, get_constant_schedule_with_warmup, AdamW
 from evaluate import evaluate
 
 
@@ -31,12 +31,13 @@ def train(model, train, dev, train_steps, lr, metaphor_weight, alpha, beta,
         best_model: state_dict of the best model according to validation data.
     """
     # Optimiser
-    optimiser = AdamW(model.parameters(), lr=lr)
-    scheduler = get_constant_schedule_with_warmup(
-        optimiser, num_warmup_steps=int(train_steps * .1)
+    optimiser = AdamW(model.parameters(), lr=lr, eps=1e-8)
+    scheduler = get_cosine_schedule_with_warmup(
+        optimiser, num_warmup_steps=int(train_steps * .1), num_training_steps=train_steps
     )
     train_iter = iter(train)
     loss_fn_novelty = MSELoss()
+    # loss_fn_metaphor = NLLLoss(ignore_index=-2, weight=torch.FloatTensor([1 - metaphor_weight, metaphor_weight]))
     metaphor_losses, novelty_losses = [], []
 
     for x in range(train_steps):
@@ -44,6 +45,8 @@ def train(model, train, dev, train_steps, lr, metaphor_weight, alpha, beta,
             batch = train_iter.next()
         except StopIteration:
             train_iter = iter(train)
+            metaphor_losses = []
+            novelty_losses = []
             batch = train_iter.next()
 
         # Forward pass through the model
@@ -52,7 +55,7 @@ def train(model, train, dev, train_steps, lr, metaphor_weight, alpha, beta,
         metaphoricity_output, novelty_output = model(batch.tokens, batch.mask)
 
         # Compute loss for metaphoricity labels
-        metaphoricity_labels = batch.metaphoricity_labels.float().view(-1)
+        metaphoricity_labels = batch.bert_metaphoricity_labels.view(-1)
         metaphoricity_output = metaphoricity_output.cpu().contiguous().view(-1)
         weights = copy.deepcopy(metaphoricity_labels)
         weights[weights == 1] = metaphor_weight
@@ -64,8 +67,8 @@ def train(model, train, dev, train_steps, lr, metaphor_weight, alpha, beta,
             metaphoricity_labels)
         metaphor_losses.append(metaphoricity_loss.item())
 
-        # Compute loss for novelty scores
-        novelty_labels = batch.novelty_labels.float().view(-1)
+        # # Compute loss for novelty scores
+        novelty_labels = batch.bert_novelty_labels.view(-1)
         novelty_output = novelty_output.cpu().contiguous().view(-1)
         weights = copy.deepcopy(novelty_labels)
         weights[weights != -2] = 1
@@ -86,7 +89,7 @@ def train(model, train, dev, train_steps, lr, metaphor_weight, alpha, beta,
             metaphoricity_score, novelty_score = evaluate(model, dev)
             #score_devs.append(score_dev)
             torch.cuda.empty_cache()
-    return copy.deepcopy(model.state_dict())
+    return model
 
 
 def clean_object_from_memory(obj):
