@@ -18,6 +18,7 @@ class Batch:
     """Batch object."""
 
     def __init__(self, sentences, lengths, mask, tokens, mapping,
+                 bert_metaphoricity_labels, bert_novelty_labels,
                  metaphoricity_labels, novelty_labels):
         """Initialise Batch object.
 
@@ -38,8 +39,10 @@ class Batch:
         # BERT specific tensor
         self.mapping = mapping
         self.tokens = torch.LongTensor(tokens)
-        self.metaphoricity_labels = torch.FloatTensor(metaphoricity_labels)
-        self.novelty_labels = torch.FloatTensor(novelty_labels)
+        self.bert_metaphoricity_labels = torch.FloatTensor(bert_metaphoricity_labels)
+        self.bert_novelty_labels = torch.FloatTensor(bert_novelty_labels)
+        self.metaphoricity_labels = metaphoricity_labels
+        self.novelty_labels = novelty_labels
 
 
 class CustomDataset(Dataset):
@@ -124,7 +127,9 @@ class CustomDataset(Dataset):
             bert_tokens,
             mapping,
             bert_metaphoricity_labels,
-            bert_novelty_labels)
+            bert_novelty_labels,
+            metaphoricity_labels,
+            novelty_labels)
 
 
 def load_data(batch_size=32):
@@ -158,7 +163,7 @@ def load_data(batch_size=32):
                 novelty_scores[' '.join(words)] = scores
 
     meta_train = get_metaphor_data(
-        "data/VUA_train.csv", novelty_scores, train=True, batch_size=batch_size
+        "data/VUA_train_small.csv", novelty_scores, train=True, batch_size=batch_size
     )
     meta_dev = get_metaphor_data(
         "data/VUA_validation.csv", novelty_scores, batch_size=batch_size)
