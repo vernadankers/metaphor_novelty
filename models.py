@@ -24,7 +24,7 @@ class MetaphorModel(torch.nn.Module):
         self.bert_model.train()
 
         # Simple classifier
-        self.dropout_output = torch.nn.Dropout(0.3)
+        self.dropout_output = torch.nn.Dropout(0.1)
         self.metaphor_output_projection = torch.nn.Linear(768, 1)
         self.novelty_output_projection = torch.nn.Linear(768, 1)
 
@@ -43,10 +43,10 @@ class MetaphorModel(torch.nn.Module):
         # Extract word encodings from BERT
         if not torch.cuda.is_available():
             bert_output = self.bert_model(
-                inputs, attention_mask=mask)[0]
+                input_ids=inputs, attention_mask=mask)[0]
         else:
             bert_output = self.bert_model(
-                inputs.cuda(), attention_mask=mask.cuda())[0]
+                input_ids=inputs.cuda(), attention_mask=mask.cuda())[0]
         encoded_sentence = self.dropout_output(bert_output)
         metaphoricity = torch.sigmoid(
             self.metaphor_output_projection(encoded_sentence)).squeeze(-1)
