@@ -68,5 +68,5 @@ if __name__ == "__main__":
 
     # Evaluate the trained model on test data.
     logging.info("Best Model")
-    model.load_state_dict(best_model)
-    evaluate(model.cuda(), test, "test", args["output"])
+    evaluate(best_model, test, "test", args["output"])
+    torch.save(best_model, "model.pt")
